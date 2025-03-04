@@ -1,0 +1,46 @@
+@import "tailwindcss";
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #1a1a1a; /* Dark background for the app */
+  color: #ffffff; /* White text for contrast */
+}
+
+/* Navbar Styles */
+nav {
+  background-color: #1f2937; /* Dark gray for navbar */
+}
+
+nav a, nav button {
+  transition: all 0.3s ease;
+}
+
+nav .container {
+  max-width: 1200px;
+}
+
+/* Mobile Menu */
+#mobile-menu {
+  transition: all 0.3s ease-in-out;
+}
+
+@media (max-width: 1023px) {
+  #mobile-menu.hidden {
+    display: none;
+  }
+  #mobile-menu {
+    width: 100%;
+  }
+  #mobile-menu ul {
+    text-align: center;
+  }
+  #mobile-menu li {
+    margin: 10px 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  #mobile-menu {
+    display: flex !important;
+  }
+}
