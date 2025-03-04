@@ -65,7 +65,7 @@ function Home() {
             {isSaleGuideOpen && (
               <div className="w-full bg-gray-800 p-2">
                 <img
-                  src="/src/assets/img.jpg"
+                  src="/public/img.jpg"
                   alt="How to Sale Guide"
                   className="w-full max-w-[800px] h-auto mx-auto object-contain md:max-h-[2000px] sm:max-h-[1000px] max-h-[600px]"
                 />
@@ -87,7 +87,7 @@ function Home() {
             {isBuyGuideOpen && (
               <div className="w-full bg-gray-800 p-2">
                 <img
-                  src="/src/assets/img1.jpg"
+                  src="/public/img1.jpg"
                   alt="How to Buy Guide"
                   className="w-full max-w-[800px] h-auto mx-auto object-contain md:max-h-[2000px] sm:max-h-[1000px] max-h-[600px]"
                 />
