@@ -13,7 +13,7 @@ function MyAds() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/ads/my-ads?email=${user.primaryEmailAddress?.emailAddress}`
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/my-ads?email=${user.primaryEmailAddress?.emailAddress}`
         );
         if (!response.ok) throw new Error('Failed to fetch ads');
         const data = await response.json();
@@ -48,7 +48,7 @@ function MyAds() {
     }
   
     try {
-      const response = await fetch('http://localhost:5000/api/ads/update', {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/update`, {
         method: 'PUT',
         body: formData,
       });
@@ -66,7 +66,7 @@ function MyAds() {
     if (!adToDelete) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/ads/delete', {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/delete`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

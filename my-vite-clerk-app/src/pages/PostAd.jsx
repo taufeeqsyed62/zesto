@@ -55,7 +55,7 @@ function PostAd() {
     if (image) formData.append('image', image);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ads/create', {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/create`, {
         method: 'POST',
         body: formData,
       });

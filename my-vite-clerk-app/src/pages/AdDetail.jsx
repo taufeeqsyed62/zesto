@@ -15,7 +15,7 @@ function AdDetail() {
   useEffect(() => {
     const fetchAdDetail = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/ads/${adId}`);
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${adId}`);
         if (!response.ok) throw new Error('Failed to fetch ad details');
         const data = await response.json();
         setAd(data);
@@ -39,7 +39,8 @@ function AdDetail() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/chat/request', {
+      const response = await fetch(`${VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request`
+, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

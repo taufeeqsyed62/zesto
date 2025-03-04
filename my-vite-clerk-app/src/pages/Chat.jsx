@@ -20,9 +20,9 @@ function Chat() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/chat/requests?email=${encodeURIComponent(
-            user.primaryEmailAddress?.emailAddress
-          )}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/requests?email=${encodeURIComponent(
+  user.primaryEmailAddress?.emailAddress
+)}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
         );
         if (!response.ok) throw new Error('Failed to fetch chat requests');
         const data = await response.json();
@@ -30,7 +30,7 @@ function Chat() {
         const enrichedData = await Promise.all(
           data.map(async (req) => {
             try {
-              const adResponse = await fetch(`http://localhost:5000/api/ads/${req.ad_id}`);
+              const adResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${req.ad_id}`);
               if (!adResponse.ok) throw new Error(`Failed to fetch ad ${req.ad_id}`);
               const adData = await adResponse.json();
               return {
@@ -70,7 +70,7 @@ function Chat() {
 
   const handleRequestAction = async (requestId, status) => {
     try {
-      const response = await fetch('http://localhost:5000/api/chat/request/update', {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

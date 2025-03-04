@@ -17,7 +17,7 @@ function Home() {
   useEffect(() => {
     const fetchActiveAds = async () => {
       try {
-        let url = 'http://localhost:5000/api/ads/active';
+        let url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/active`;
         if (selectedCategory !== 'All') {
           url += `?category=${encodeURIComponent(selectedCategory)}`;
         }
