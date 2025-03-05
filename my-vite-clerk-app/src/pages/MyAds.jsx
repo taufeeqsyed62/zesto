@@ -33,20 +33,15 @@ function MyAds() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editAd) return;
-  
+
     const formData = new FormData(e.target);
     formData.append('adId', editAd.id);
     formData.append('userEmail', user.primaryEmailAddress?.emailAddress || '');
-    
+
     // Normalize userPhone to a single string
     const userPhone = Array.isArray(editAd.user_phone) ? editAd.user_phone[0] : editAd.user_phone;
     formData.set('userPhone', userPhone); // Use set() to ensure single value
-  
-    // Debug FormData contents
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
-  
+
     try {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/update`, {
         method: 'PUT',
@@ -65,6 +60,10 @@ function MyAds() {
     const adToDelete = ads.find((ad) => ad.id === adId);
     if (!adToDelete) return;
 
+    // Show confirmation alert
+    const confirmed = window.confirm('Do you want to confirm delete?');
+    if (!confirmed) return;
+
     try {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/delete`, {
         method: 'DELETE',
@@ -72,7 +71,7 @@ function MyAds() {
         body: JSON.stringify({
           adId,
           userEmail: user.primaryEmailAddress?.emailAddress || '',
-          userPhone: adToDelete.user_phone, // Use phone from the ad
+          userPhone: adToDelete.user_phone,
         }),
       });
       const result = await response.json();

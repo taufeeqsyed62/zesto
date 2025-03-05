@@ -39,8 +39,7 @@ function AdDetail() {
     }
 
     try {
-      const response = await fetch(`${VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request`
-, {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +92,7 @@ function AdDetail() {
             {ad.show_phone ? (
               <span className="text-xl font-bold">{ad.user_phone}</span>
             ) : (
-              '( Not Provided by Seller)Request for Chat'
+              '(Not Provided by Seller) Request for Chat'
             )}
           </p>
           <p className="text-white mb-2">

@@ -21,8 +21,8 @@ function Chat() {
       try {
         const response = await fetch(
           `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/requests?email=${encodeURIComponent(
-  user.primaryEmailAddress?.emailAddress
-)}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
+            user.primaryEmailAddress?.emailAddress
+          )}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
         );
         if (!response.ok) throw new Error('Failed to fetch chat requests');
         const data = await response.json();
@@ -112,7 +112,6 @@ function Chat() {
   return (
     <div className="p-4">
       <div className="md:flex md:gap-6">
-        {/* Chat Requests List */}
         <div
           className={`w-full md:w-1/3 bg-gray-800 p-4 rounded-lg h-auto md:h-96 overflow-y-auto ${
             selectedRequest ? 'hidden md:block' : 'block'
@@ -136,7 +135,6 @@ function Chat() {
           ))}
         </div>
 
-        {/* Selected Request Details */}
         <div
           className={`w-full md:w-2/3 mt-4 md:mt-0 ${selectedRequest ? 'block' : 'hidden md:block'}`}
         >
@@ -181,14 +179,12 @@ function Chat() {
                       <p className="text-white mb-2 text-sm md:text-base">
                         <span className="font-semibold">Buyer Phone:</span> {selectedRequest.buyer_phone || 'Not provided'}
                       </p>
-                      
                     </>
                   ) : (
                     <>
                       <p className="text-white mb-2 text-sm md:text-base">
                         <span className="font-semibold">Seller Phone:</span> {selectedRequest.seller_phone || 'Not provided'}
                       </p>
-                     
                     </>
                   )}
                 </div>
