@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
+import image from '../assets/img.jpg';
+import image2 from '../assets/img1.jpg';
+
 
 function Home() {
   const { user } = useUser();
@@ -65,7 +68,7 @@ function Home() {
             {isSaleGuideOpen && (
               <div className="w-full bg-gray-800 p-2">
                 <img
-                  src="/public/img.jpg"
+                  src={image}
                   alt="How to Sale Guide"
                   className="w-full max-w-[800px] h-auto mx-auto object-contain md:max-h-[2000px] sm:max-h-[1000px] max-h-[600px]"
                 />
@@ -87,7 +90,7 @@ function Home() {
             {isBuyGuideOpen && (
               <div className="w-full bg-gray-800 p-2">
                 <img
-                  src="/public/img1.jpg"
+                  src={image2}
                   alt="How to Buy Guide"
                   className="w-full max-w-[800px] h-auto mx-auto object-contain md:max-h-[2000px] sm:max-h-[1000px] max-h-[600px]"
                 />
