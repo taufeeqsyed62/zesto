@@ -5,12 +5,12 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import image from '../assets/img.jpg';
 import image2 from '../assets/img1.jpg';
 
-
 function Home() {
   const { user } = useUser();
   const navigate = useNavigate();
   const [ads, setAds] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); // Added loading state
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSaleGuideOpen, setIsSaleGuideOpen] = useState(false);
   const [isBuyGuideOpen, setIsBuyGuideOpen] = useState(false);
@@ -18,19 +18,33 @@ function Home() {
   const categories = ['All', 'Books', 'Electronics', 'Sports', 'Clothing & Fashion'];
 
   useEffect(() => {
-    const fetchActiveAds = async () => {
-      try {
-        let url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/active`;
-        if (selectedCategory !== 'All') {
-          url += `?category=${encodeURIComponent(selectedCategory)}`;
+    const fetchActiveAds = async (retryCount = 5, delayMs = 1000) => {
+      setLoading(true);
+      setError(null);
+
+      const attemptFetch = async () => {
+        try {
+          let url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/active`;
+          if (selectedCategory !== 'All') {
+            url += `?category=${encodeURIComponent(selectedCategory)}`;
+          }
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Failed to fetch ads');
+          const data = await response.json();
+          setAds(data);
+          setLoading(false);
+        } catch (err) {
+          if (retryCount > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs)); // Delay before retry
+            return attemptFetch(retryCount - 1); // Recursive retry
+          } else {
+            setError(err.message);
+            setLoading(false);
+          }
         }
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch ads');
-        const data = await response.json();
-        setAds(data);
-      } catch (err) {
-        setError(err.message);
-      }
+      };
+
+      attemptFetch();
     };
 
     fetchActiveAds();
@@ -116,64 +130,92 @@ function Home() {
               </button>
             ))}
           </div>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-          {ads.length === 0 && !error && (
-            <p className="text-gray-400">
-              No active ads available{selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}.
-            </p>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {ads.map((ad) => (
-              <div
-                key={ad.id}
-                className="max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-sm"
+
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <svg
+                className="animate-spin h-10 w-10 text-blue-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
               >
-                <Link to={`/ad-detail/${ad.id}`}>
-                  <div className="relative w-full h-48 bg-gray-700 rounded-t-lg overflow-hidden">
-                    <img
-                      className="w-full h-full object-contain"
-                      src={ad.image_url || 'https://via.placeholder.com/150'}
-                      alt={ad.title}
-                    />
-                  </div>
-                </Link>
-                <div className="p-5">
-                  <Link to={`/ad-detail/${ad.id}`}>
-                    <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
-                      {ad.title}
-                    </h5>
-                  </Link>
-                  <p className="mb-3 font-normal text-gray-400">
-                    {truncateDescription(ad.description)}
-                  </p>
-                  <p className="mb-3 text-white">
-                    <span className="font-semibold"> ₹{ad.price_inr}</span>
-                  </p>
-                  <Link
-                    to={`/ad-detail/${ad.id}`}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800"
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8h-8z"
+                ></path>
+              </svg>
+            </div>
+          ) : (
+            <>
+              {error && <p className="text-red-500 mb-4">{error}</p>}
+              {ads.length === 0 && !error && (
+                <p className="text-gray-400">
+                  No active ads available{selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}.
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {ads.map((ad) => (
+                  <div
+                    key={ad.id}
+                    className="max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-sm"
                   >
-                    View Detail
-                    <svg
-                      className="rtl:rotate-180 w-3.5 h-3.5 ml-2"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 14 10"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M1 5h12m0 0L9 1m4 4L9 9"
-                      />
-                    </svg>
-                  </Link>
-                </div>
+                    <Link to={`/ad-detail/${ad.id}`}>
+                      <div className="relative w-full h-48 bg-gray-700 rounded-t-lg overflow-hidden">
+                        <img
+                          className="w-full h-full object-contain"
+                          src={ad.image_url || 'https://via.placeholder.com/150'}
+                          alt={ad.title}
+                        />
+                      </div>
+                    </Link>
+                    <div className="p-5">
+                      <Link to={`/ad-detail/${ad.id}`}>
+                        <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
+                          {ad.title}
+                        </h5>
+                      </Link>
+                      <p className="mb-3 font-normal text-gray-400">
+                        {truncateDescription(ad.description)}
+                      </p>
+                      <p className="mb-3 text-white">
+                        <span className="font-semibold"> ₹{ad.price_inr}</span>
+                      </p>
+                      <Link
+                        to={`/ad-detail/${ad.id}`}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800"
+                      >
+                        View Detail
+                        <svg
+                          className="rtl:rotate-180 w-3.5 h-3.5 ml-2"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 14 10"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M1 5h12m0 0L9 1m4 4L9 9"
+                          />
+                        </svg>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </div>
 

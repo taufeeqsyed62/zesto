@@ -6,61 +6,92 @@ function MyAds() {
   const [ads, setAds] = useState([]);
   const [error, setError] = useState(null);
   const [editAd, setEditAd] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    const fetchMyAds = async () => {
+    const fetchMyAds = async (retryCount = 3, delayMs = 1000) => {
       if (!user) return;
 
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/my-ads?email=${user.primaryEmailAddress?.emailAddress}`
-        );
-        if (!response.ok) throw new Error('Failed to fetch ads');
-        const data = await response.json();
-        setAds(data);
-      } catch (err) {
-        setError(err.message);
-      }
+      setLoading(true);
+      setError(null);
+
+      const attemptFetch = async () => {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/my-ads?email=${user.primaryEmailAddress?.emailAddress}`
+          );
+          if (!response.ok) throw new Error('Failed to fetch ads');
+          const data = await response.json();
+          setAds(data);
+          setLoading(false);
+        } catch (err) {
+          if (retryCount > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return attemptFetch(retryCount - 1);
+          } else {
+            setError(err.message);
+            setLoading(false);
+          }
+        }
+      };
+
+      attemptFetch();
     };
 
     fetchMyAds();
   }, [user]);
 
   const handleEdit = (ad) => {
-    setEditAd({ ...ad });
+    setEditAd({
+      ...ad,
+      showPhone: ad.show_phone,
+      userPhone: Array.isArray(ad.user_phone) ? ad.user_phone[0] : ad.user_phone, // Normalize initial value
+    });
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editAd) return;
 
+    setIsUpdating(true);
+    setError(null);
+
     const formData = new FormData(e.target);
     formData.append('adId', editAd.id);
     formData.append('userEmail', user.primaryEmailAddress?.emailAddress || '');
+    formData.append('showPhone', editAd.showPhone.toString());
+    formData.set('userPhone', editAd.userPhone); // Use updated userPhone from state
 
-    // Normalize userPhone to a single string
-    const userPhone = Array.isArray(editAd.user_phone) ? editAd.user_phone[0] : editAd.user_phone;
-    formData.set('userPhone', userPhone); // Use set() to ensure single value
+    const updateAd = async (retryCount = 3, delayMs = 1000) => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/update`, {
+          method: 'PUT',
+          body: formData,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to update ad');
+        setAds((prev) => prev.map((ad) => (ad.id === editAd.id ? result.ad : ad)));
+        setEditAd(null);
+        setIsUpdating(false);
+      } catch (err) {
+        if (retryCount > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return updateAd(retryCount - 1, delayMs);
+        } else {
+          setError(err.message);
+          setIsUpdating(false);
+        }
+      }
+    };
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/update`, {
-        method: 'PUT',
-        body: formData,
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-      setAds((prev) => prev.map((ad) => (ad.id === editAd.id ? result.ad : ad)));
-      setEditAd(null);
-    } catch (err) {
-      setError(err.message);
-    }
+    updateAd();
   };
 
   const handleDelete = async (adId) => {
     const adToDelete = ads.find((ad) => ad.id === adId);
     if (!adToDelete) return;
 
-    // Show confirmation alert
     const confirmed = window.confirm('Do you want to confirm delete?');
     if (!confirmed) return;
 
@@ -86,50 +117,77 @@ function MyAds() {
     <div className="p-6">
       <h1 className="text-2xl font-bold text-white mb-6">My Ads</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
-      {ads.length === 0 && !error && <p className="text-gray-400">No ads found.</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {ads.map((ad) => (
-          <div
-            key={ad.id}
-            className="max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-sm"
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <svg
+            className="animate-spin h-10 w-10 text-blue-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
           >
-            <img
-              className="rounded-t-lg w-full h-48 object-cover"
-              src={ad.image_url || 'https://via.placeholder.com/150'}
-              alt={ad.title}
-            />
-            <div className="p-5">
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">{ad.title}</h5>
-              <p className="mb-3 font-normal text-gray-400">
-                {ad.description || 'No description available.'}
-              </p>
-              <p className="mb-3 text-white">
-                <span className="font-semibold">Price:</span> ₹{ad.price_inr}
-              </p>
-              <p className="mb-3 text-white">
-                <span className="font-semibold">Category:</span> {ad.category}
-              </p>
-              <p className="mb-3 text-white">
-                <span className="font-semibold">Phone:</span> {ad.user_phone}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(ad)}
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(ad.id)}
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
-                >
-                  Delete
-                </button>
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8h-8z"
+            ></path>
+          </svg>
+        </div>
+      ) : (
+        <>
+          {ads.length === 0 && !error && <p className="text-gray-400">No ads found.</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {ads.map((ad) => (
+              <div
+                key={ad.id}
+                className="max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-sm"
+              >
+                <img
+                  className="rounded-t-lg w-full h-48 object-cover"
+                  src={ad.image_url || 'https://via.placeholder.com/150'}
+                  alt={ad.title}
+                />
+                <div className="p-5">
+                  <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">{ad.title}</h5>
+                  <p className="mb-3 font-normal text-gray-400">
+                    {ad.description || 'No description available.'}
+                  </p>
+                  <p className="mb-3 text-white">
+                    <span className="font-semibold">Price:</span> ₹{ad.price_inr}
+                  </p>
+                  <p className="mb-3 text-white">
+                    <span className="font-semibold">Category:</span> {ad.category}
+                  </p>
+                  <p className="mb-3 text-white">
+                    <span className="font-semibold">Phone:</span> {ad.user_phone}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(ad)}
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(ad.id)}
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {editAd && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -142,6 +200,7 @@ function MyAds() {
                 name="title"
                 defaultValue={editAd.title}
                 className="w-full p-2 bg-gray-700 text-white rounded"
+                disabled={isUpdating}
               />
             </div>
             <div>
@@ -150,6 +209,7 @@ function MyAds() {
                 name="description"
                 defaultValue={editAd.description}
                 className="w-full p-2 bg-gray-700 text-white rounded"
+                disabled={isUpdating}
               />
             </div>
             <div>
@@ -159,6 +219,7 @@ function MyAds() {
                 name="priceInr"
                 defaultValue={editAd.price_inr}
                 className="w-full p-2 bg-gray-700 text-white rounded"
+                disabled={isUpdating}
               />
             </div>
             <div>
@@ -166,10 +227,31 @@ function MyAds() {
               <input
                 type="tel"
                 name="userPhone"
-                defaultValue={editAd.user_phone}
+                value={editAd.userPhone}
+                onChange={(e) => setEditAd({ ...editAd, userPhone: e.target.value })}
                 className="w-full p-2 bg-gray-700 text-white rounded"
                 required
+                disabled={isUpdating}
               />
+            </div>
+            <div>
+              <label className="block text-white">Show Phone Number</label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editAd.showPhone}
+                  onChange={() => setEditAd({ ...editAd, showPhone: !editAd.showPhone })}
+                  className="sr-only peer"
+                  disabled={isUpdating}
+                />
+                <div className="relative w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-white">
+                  {editAd.showPhone ? 'Visible' : 'Hidden'}
+                </span>
+              </label>
+              <p className="mt-1 text-sm text-gray-400">
+                {editAd.showPhone ? 'Buyers can view your phone number' : 'Your phone number is not visible'}
+              </p>
             </div>
             <div>
               <label className="block text-white">Category</label>
@@ -177,6 +259,7 @@ function MyAds() {
                 name="category"
                 defaultValue={editAd.category}
                 className="w-full p-2 bg-gray-700 text-white rounded"
+                disabled={isUpdating}
               >
                 <option value="Books">Books</option>
                 <option value="Electronics">Electronics</option>
@@ -191,19 +274,48 @@ function MyAds() {
                 name="image"
                 accept="image/*"
                 className="w-full p-2 bg-gray-700 text-white rounded"
+                disabled={isUpdating}
               />
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center disabled:bg-blue-400"
+                disabled={isUpdating}
               >
-                Save
+                {isUpdating ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8h-8z"
+                      ></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => setEditAd(null)}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                disabled={isUpdating}
               >
                 Cancel
               </button>

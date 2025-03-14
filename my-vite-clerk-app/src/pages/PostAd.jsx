@@ -14,7 +14,8 @@ function PostAd() {
   const [showPhone, setShowPhone] = useState(true);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneError, setPhoneError] = useState(''); // Track phone number validation
+  const [phoneError, setPhoneError] = useState('');
+  const [showPopup, setShowPopup] = useState(false); // State for popup
 
   const categories = ['Books', 'Electronics', 'Sports', 'Clothing & Fashion'];
 
@@ -43,6 +44,7 @@ function PostAd() {
 
     setIsLoading(true);
     setError(null);
+    setShowPopup(false);
 
     const formData = new FormData();
     formData.append('userEmail', user.primaryEmailAddress?.emailAddress || '');
@@ -54,19 +56,28 @@ function PostAd() {
     formData.append('showPhone', showPhone.toString());
     if (image) formData.append('image', image);
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/create`, {
-        method: 'POST',
-        body: formData,
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-      navigate('/my-ads');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+    const submitAd = async (retryCount = 3, delayMs = 1000) => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/create`, {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to post ad');
+        navigate('/my-ads');
+      } catch (err) {
+        if (retryCount > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return submitAd(retryCount - 1, delayMs);
+        } else {
+          setError(err.message);
+          setShowPopup(true); // Show popup on final failure
+          setIsLoading(false);
+        }
+      }
+    };
+
+    submitAd();
   };
 
   return (
@@ -107,6 +118,7 @@ function PostAd() {
         </div>
         <div>
           <label className="block text-white mb-1">Phone Number *</label>
+        
           <input
             type="tel"
             value={phoneNumber}
@@ -118,8 +130,13 @@ function PostAd() {
           {phoneError && <p className="mt-1 text-sm text-red-500">{phoneError}</p>}
         </div>
         <div>
-          <label className="block text-white mb-1">Show Phone Number</label>
-          <label className="inline-flex items-center cursor-pointer">
+        <label className="block text-white mb-1 text-sm font-medium">
+  <span className="flex items-center">
+    
+    Show Phone Number
+  </span>
+  <span className="block text-xs text-gray-300 mt-1">(Set visible for better reach)</span>
+</label>          <label className="inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
               checked={showPhone}
@@ -197,6 +214,21 @@ function PostAd() {
           )}
         </button>
       </form>
+
+      {/* Popup for failure */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <p className="text-white mb-4">Please try using some other image</p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

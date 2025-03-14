@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import { CameraIcon } from '@heroicons/react/24/solid'; // Import CameraIcon
 
 function PostAd() {
   const { user } = useUser();
@@ -15,7 +14,7 @@ function PostAd() {
   const [showPhone, setShowPhone] = useState(true);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneError, setPhoneError] = useState('');
+  const [phoneError, setPhoneError] = useState(''); // Track phone number validation
 
   const categories = ['Books', 'Electronics', 'Sports', 'Clothing & Fashion'];
 
@@ -27,14 +26,6 @@ function PostAd() {
     } else {
       setPhoneError('');
     }
-  };
-
-  const handleFileInput = (e) => {
-    setImage(e.target.files[0]);
-  };
-
-  const handleCameraInput = (e) => {
-    setImage(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
@@ -164,34 +155,13 @@ function PostAd() {
         </div>
         <div>
           <label className="block text-white mb-1">Image</label>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="file"
-              onChange={handleFileInput}
-              className="w-full sm:w-1/2 p-2 bg-gray-700 text-white rounded"
-              accept="image/*"
-              disabled={isLoading}
-            />
-            <label className="w-full sm:w-1/2">
-              <input
-                type="file"
-                capture="environment"
-                onChange={handleCameraInput}
-                className="hidden"
-                accept="image/*"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center disabled:bg-blue-400"
-                onClick={(e) => e.target.previousSibling.click()}
-                disabled={isLoading}
-              >
-                <CameraIcon className="h-5 w-5 mr-2" />
-                Capture Image
-              </button>
-            </label>
-          </div>
+          <input
+            type="file"
+            onChange={(e) => setImage(e.target.files[0])}
+            className="w-full p-2 bg-gray-700 text-white rounded"
+            accept="image/*"
+            disabled={isLoading}
+          />
         </div>
         <button
           type="submit"
@@ -226,14 +196,9 @@ function PostAd() {
             'Post Ad'
           )}
         </button>
-        {error && (
-          <p className="text-sm text-red-500 mt-2">
-            Your post fails please try to upload image of different size
-          </p>
-        )}
       </form>
     </div>
   );
 }
 
-export default PostAd;  
+export default PostAd;
