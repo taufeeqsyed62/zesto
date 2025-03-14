@@ -182,7 +182,7 @@ function Home() {
                         <span className="text-2xl font-bold">₹{ad.price_inr}</span>
                       </p>
                       <Link to={`/ad-detail/${ad.id}`}>
-                        <h5 className="text-xl mb-1  font-bold tracking-tight text-white">
+                        <h5 className="text-xl mb-1 font-bold tracking-tight text-white">
                           {ad.title}
                         </h5>
                       </Link>
