@@ -10,7 +10,7 @@ function Home() {
   const navigate = useNavigate();
   const [ads, setAds] = useState([]);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSaleGuideOpen, setIsSaleGuideOpen] = useState(false);
   const [isBuyGuideOpen, setIsBuyGuideOpen] = useState(false);
@@ -35,8 +35,8 @@ function Home() {
           setLoading(false);
         } catch (err) {
           if (retryCount > 0) {
-            await new Promise((resolve) => setTimeout(resolve, delayMs)); // Delay before retry
-            return attemptFetch(retryCount - 1); // Recursive retry
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return attemptFetch(retryCount - 1);
           } else {
             setError(err.message);
             setLoading(false);
@@ -178,16 +178,16 @@ function Home() {
                       </div>
                     </Link>
                     <div className="p-5">
+                      <p className="mb-1 text-white">
+                        <span className="text-2xl font-bold">₹{ad.price_inr}</span>
+                      </p>
                       <Link to={`/ad-detail/${ad.id}`}>
-                        <h5 className="mb-2 text-2xl font-bold tracking-tight text-white">
+                        <h5 className="text-xl mb-1  font-bold tracking-tight text-white">
                           {ad.title}
                         </h5>
                       </Link>
-                      <p className="mb-3 font-normal text-gray-400">
+                      <p className="mb-3 font-bold text-gray-400">
                         {truncateDescription(ad.description)}
-                      </p>
-                      <p className="mb-3 text-white">
-                        <span className="font-semibold"> ₹{ad.price_inr}</span>
                       </p>
                       <Link
                         to={`/ad-detail/${ad.id}`}
