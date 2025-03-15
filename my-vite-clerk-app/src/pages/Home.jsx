@@ -74,7 +74,7 @@ function Home() {
               onClick={() => setIsSaleGuideOpen(!isSaleGuideOpen)}
               className="w-full py-3 text-white text-lg font-semibold hover:bg-gray-700 transition duration-300 focus:outline-none flex items-center justify-center gap-2"
             >
-              HOW TO SALE
+              HOW TO SELL
               <ChevronDownIcon
                 className={`h-5 w-5 transition-transform duration-300 ${isSaleGuideOpen ? 'rotate-180' : ''}`}
               />
@@ -230,19 +230,15 @@ function Home() {
             . All Rights Reserved.
           </span>
           <ul className="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-400 sm:mt-0">
-            <li>
-              <a href="#" className="hover:underline me-4 md:me-6">
-                About
-              </a>
-            </li>
+            
             <li>
               <a href="/my-ads" className="hover:underline me-4 md:me-6">
                 My Ads
               </a>
             </li>
             <li>
-              <a href="#" className="hover:underline">
-                Contact
+              <a href="/contact" className="hover:underline">
+                Contact Us
               </a>
             </li>
           </ul>

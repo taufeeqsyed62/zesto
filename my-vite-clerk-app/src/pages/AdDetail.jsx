@@ -8,20 +8,36 @@ function AdDetail() {
   const { user } = useUser();
   const [ad, setAd] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); // Added for ad fetch
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buyerPhone, setBuyerPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added for phone submit
 
   useEffect(() => {
-    const fetchAdDetail = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${adId}`);
-        if (!response.ok) throw new Error('Failed to fetch ad details');
-        const data = await response.json();
-        setAd(data);
-      } catch (err) {
-        setError(err.message);
-      }
+    const fetchAdDetail = async (retryCount = 5, delayMs = 1000) => {
+      setLoading(true);
+      setError(null);
+
+      const attemptFetch = async () => {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${adId}`);
+          if (!response.ok) throw new Error('Failed to fetch ad details');
+          const data = await response.json();
+          setAd(data);
+          setLoading(false);
+        } catch (err) {
+          if (retryCount > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return attemptFetch(retryCount - 1);
+          } else {
+            setError(err.message);
+            setLoading(false);
+          }
+        }
+      };
+
+      attemptFetch();
     };
 
     fetchAdDetail();
@@ -38,33 +54,63 @@ function AdDetail() {
       return;
     }
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          buyerEmail: user.primaryEmailAddress?.emailAddress,
-          buyerPhone,
-          adId,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
-      setIsModalOpen(false);
-      setBuyerPhone('');
-      setPhoneError('');
-      navigate(`/chat?requestId=${result.requestId}`);
-    } catch (err) {
-      setError(err.message);
-    }
+    setIsSubmitting(true);
+    setPhoneError('');
+    setError(null);
+
+    const submitPhone = async (retryCount = 3, delayMs = 1000) => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            buyerEmail: user.primaryEmailAddress?.emailAddress,
+            buyerPhone,
+            adId,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to submit phone number');
+        setIsModalOpen(false);
+        setBuyerPhone('');
+        setIsSubmitting(false);
+        navigate(`/chat?requestId=${result.requestId}`);
+      } catch (err) {
+        if (retryCount > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return submitPhone(retryCount - 1);
+        } else {
+          setError(err.message);
+          setIsSubmitting(false);
+        }
+      }
+    };
+
+    submitPhone();
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <svg
+          className="animate-spin h-10 w-10 text-blue-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h-8z"></path>
+        </svg>
+      </div>
+    );
+  }
 
   if (error) {
     return <div className="p-6 text-red-500">Error: {error}</div>;
   }
 
   if (!ad) {
-    return <div className="p-6 text-white">Loading...</div>;
+    return <div className="p-6 text-white">No ad data available.</div>;
   }
 
   return (
@@ -172,23 +218,53 @@ function AdDetail() {
               className="w-full p-2 bg-gray-700 text-white rounded mb-2"
               placeholder="Enter 10-digit phone number"
               maxLength={10}
+              disabled={isSubmitting}
             />
             {phoneError && <p className="text-red-500 text-sm mb-2">{phoneError}</p>}
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
             <div className="flex gap-2">
               <button
                 onClick={handlePhoneSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                disabled={phoneError || !buyerPhone}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center disabled:bg-blue-400"
+                disabled={phoneError || !buyerPhone || isSubmitting}
               >
-                Submit
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8h-8z"
+                      ></path>
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit'
+                )}
               </button>
               <button
                 onClick={() => {
                   setIsModalOpen(false);
                   setBuyerPhone('');
                   setPhoneError('');
+                  setError(null);
                 }}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>

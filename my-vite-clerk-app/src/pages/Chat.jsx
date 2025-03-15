@@ -10,59 +10,78 @@ function Chat() {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); // Added for page load
 
   const queryParams = new URLSearchParams(location.search);
   const requestIdFromUrl = queryParams.get('requestId');
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user) return;
+    const fetchRequests = async (retryCount = 5, delayMs = 1000) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/requests?email=${encodeURIComponent(
-            user.primaryEmailAddress?.emailAddress
-          )}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
-        );
-        if (!response.ok) throw new Error('Failed to fetch chat requests');
-        const data = await response.json();
+      setLoading(true);
+      setError(null);
 
-        const enrichedData = await Promise.all(
-          data.map(async (req) => {
-            try {
-              const adResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${req.ad_id}`);
-              if (!adResponse.ok) throw new Error(`Failed to fetch ad ${req.ad_id}`);
-              const adData = await adResponse.json();
-              return {
-                ...req,
-                ad_title: adData.title || 'Unknown Title',
-                ad_description: adData.description || 'No description available',
-              };
-            } catch (adErr) {
-              console.error(`Error fetching ad ${req.ad_id}:`, adErr.message);
-              return {
-                ...req,
-                ad_title: 'Error Loading Title',
-                ad_description: 'Error loading description',
-              };
+      const attemptFetch = async () => {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/chat/requests?email=${encodeURIComponent(
+              user.primaryEmailAddress?.emailAddress
+            )}&phone=${encodeURIComponent(user.primaryPhoneNumber?.phoneNumber || '')}`
+          );
+          if (!response.ok) throw new Error('Failed to fetch chat requests');
+          const data = await response.json();
+
+          const enrichedData = await Promise.all(
+            data.map(async (req) => {
+              try {
+                const adResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/${req.ad_id}`);
+                if (!adResponse.ok) throw new Error(`Failed to fetch ad ${req.ad_id}`);
+                const adData = await adResponse.json();
+                return {
+                  ...req,
+                  ad_title: adData.title || 'Unknown Title',
+                  ad_description: adData.description || 'No description available',
+                };
+              } catch (adErr) {
+                console.error(`Error fetching ad ${req.ad_id}:`, adErr.message);
+                return {
+                  ...req,
+                  ad_title: 'Error Loading Title',
+                  ad_description: 'Error loading description',
+                };
+              }
+            })
+          );
+
+          setRequests(enrichedData);
+
+          if (requestIdFromUrl) {
+            const matchingRequest = enrichedData.find((req) => req.id === requestIdFromUrl);
+            if (matchingRequest) {
+              setSelectedRequest(matchingRequest);
+            } else {
+              console.warn(`No matching request found for requestId: ${requestIdFromUrl}`);
             }
-          })
-        );
+          }
 
-        setRequests(enrichedData);
-
-        if (requestIdFromUrl) {
-          const matchingRequest = enrichedData.find((req) => req.id === requestIdFromUrl);
-          if (matchingRequest) {
-            setSelectedRequest(matchingRequest);
+          setLoading(false);
+        } catch (err) {
+          if (retryCount > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return attemptFetch(retryCount - 1);
           } else {
-            console.warn(`No matching request found for requestId: ${requestIdFromUrl}`);
+            console.error('Error in fetchRequests after retries:', err.message);
+            setError(err.message);
+            setLoading(false);
           }
         }
-      } catch (err) {
-        console.error('Error in fetchRequests:', err.message);
-        setError(err.message);
-      }
+      };
+
+      attemptFetch();
     };
 
     fetchRequests();
@@ -108,6 +127,22 @@ function Chat() {
         return 'bg-gray-700 hover:bg-blue-500';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <svg
+          className="animate-spin h-10 w-10 text-blue-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h-8z"></path>
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">

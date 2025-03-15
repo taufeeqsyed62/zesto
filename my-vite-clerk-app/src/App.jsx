@@ -8,6 +8,7 @@ import PostAd from './pages/PostAd';
 import Chat from './pages/Chat';
 import MyAds from './pages/MyAds';
 import AdDetail from './pages/AdDetail';
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/my-ads" element={<MyAds />} />
             <Route path="/ad-detail/:adId" element={<AdDetail />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/dashboard" element={<div>Dashboard Page</div>} />
             {/* Optional: Redirect unmatched routes to home when signed in */}
             <Route path="*" element={<Home />} />
