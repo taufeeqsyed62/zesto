@@ -63,7 +63,7 @@ function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen relative">
+    <div className="flex flex-col min-h-screen">
       {/* Main Content */}
       <div className="flex-1">
         {/* Dropdown Buttons */}
@@ -219,17 +219,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      {user && (
-        <Link
-          to="/post-ad"
-          className="fixed bottom-9 right-4 bg-blue-600 text-white px-8 py-4 rounded-full shadow-lg hover:bg-blue-700 transition duration-300 z-50 text-base font-medium"
-          aria-label="Sell an Item"
-        >
-          Sell an Item
-        </Link>
-      )}
-
       {/* Footer */}
       <footer className="bg-gray-800 rounded-lg shadow-sm m-4">
         <div className="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
@@ -241,6 +230,7 @@ function Home() {
             . All Rights Reserved.
           </span>
           <ul className="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-400 sm:mt-0">
+            
             <li>
               <a href="/my-ads" className="hover:underline me-4 md:me-6">
                 My Ads
