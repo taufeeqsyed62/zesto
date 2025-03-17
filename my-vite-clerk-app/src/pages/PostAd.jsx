@@ -15,18 +15,25 @@ function PostAd() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
-  const [showPopup, setShowPopup] = useState(false); // State for popup
+  const [showPopup, setShowPopup] = useState(false);
+  const [rewardPopup, setRewardPopup] = useState(null);
 
   const categories = ['Books', 'Electronics', 'Sports', 'Clothing & Fashion'];
 
   const handlePhoneChange = (e) => {
     const value = e.target.value;
     setPhoneNumber(value);
-    if (value.length !== 10) {
+    if (value.length !== 10 || !/^\d{10}$/.test(value)) {
       setPhoneError('Phone number must be 10 digits');
     } else {
       setPhoneError('');
     }
+  };
+
+  const generateReward = (adId) => {
+    const value = Math.floor(Math.random() * (20 - 5 + 1)) + 5; // Random 5–20 INR
+    const rewardId = `${adId}`; // Use adId as the rewardId for simplicity
+    return { value, rewardId };
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +44,7 @@ function PostAd() {
       return;
     }
 
-    if (phoneNumber.length !== 10) {
+    if (phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
       setError('Phone number must be 10 digits');
       return;
     }
@@ -45,6 +52,7 @@ function PostAd() {
     setIsLoading(true);
     setError(null);
     setShowPopup(false);
+    setRewardPopup(null);
 
     const formData = new FormData();
     formData.append('userEmail', user.primaryEmailAddress?.emailAddress || '');
@@ -58,20 +66,40 @@ function PostAd() {
 
     const submitAd = async (retryCount = 3, delayMs = 1000) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/create`, {
+        // Post the ad
+        const adResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/create`, {
           method: 'POST',
           body: formData,
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to post ad');
-        navigate('/my-ads');
+        const adResult = await adResponse.json();
+        if (!adResponse.ok) throw new Error(adResult.error || 'Failed to post ad');
+    
+        // Generate and save reward only on creation
+        const { value, rewardId } = generateReward(adResult.ad.id); // Ensure ad.id is the correct field from your backend
+        const rewardResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/rewards/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            rewardId,
+            value,
+            adId: adResult.ad.id, // Ensure this matches the backend response
+          }),
+        });
+        if (!rewardResponse.ok) {
+          const rewardResult = await rewardResponse.json();
+          throw new Error(rewardResult.error || 'Failed to save reward');
+        }
+    
+        setRewardPopup({ value, rewardId });
+        setIsLoading(false);
       } catch (err) {
         if (retryCount > 0) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           return submitAd(retryCount - 1, delayMs);
         } else {
           setError(err.message);
-          setShowPopup(true); // Show popup on final failure
+          setShowPopup(true);
           setIsLoading(false);
         }
       }
@@ -118,7 +146,6 @@ function PostAd() {
         </div>
         <div>
           <label className="block text-white mb-1">Phone Number *</label>
-        
           <input
             type="tel"
             value={phoneNumber}
@@ -130,13 +157,11 @@ function PostAd() {
           {phoneError && <p className="mt-1 text-sm text-red-500">{phoneError}</p>}
         </div>
         <div>
-        <label className="block text-white mb-1 text-sm font-medium">
-  <span className="flex items-center">
-    
-    Show Phone Number
-  </span>
-  <span className="block text-xs text-gray-300 mt-1">(Set visible for better reach)</span>
-</label>          <label className="inline-flex items-center cursor-pointer">
+          <label className="block text-white mb-1 text-sm font-medium">
+            <span className="flex items-center">Show Phone Number</span>
+            <span className="block text-xs text-gray-300 mt-1">(Set visible for better reach)</span>
+          </label>
+          <label className="inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
               checked={showPhone}
@@ -225,6 +250,29 @@ function PostAd() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             >
               OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Congratulatory Popup for Reward */}
+      {rewardPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <h2 className="text-xl font-bold text-white mb-4">Congratulations!</h2>
+            <p className="text-white mb-4">
+              You’ve earned a reward card worth <span className="font-bold">₹{rewardPopup.value}</span>!<br />
+              Reward ID: <span className="font-mono">{rewardPopup.rewardId}</span>
+            </p>
+            <p className="text-gray-300 mb-4">Please go to the Rewards page to claim it.</p>
+            <button
+              onClick={() => {
+                setRewardPopup(null);
+                navigate('/rewards');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Go to Rewards
             </button>
           </div>
         </div>

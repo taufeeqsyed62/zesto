@@ -14,10 +14,18 @@ function Home() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSaleGuideOpen, setIsSaleGuideOpen] = useState(false);
   const [isBuyGuideOpen, setIsBuyGuideOpen] = useState(false);
+  const [showPopup, setShowPopup] = useState(false); // State for popup visibility
 
   const categories = ['All', 'Books', 'Electronics', 'Sports', 'Clothing & Fashion'];
 
   useEffect(() => {
+    // Check if it's the user's first visit
+    const hasVisited = localStorage.getItem('hasVisitedHome');
+    if (!hasVisited) {
+      setShowPopup(true); // Show popup if first visit
+      localStorage.setItem('hasVisitedHome', 'true'); // Mark as visited
+    }
+
     const fetchActiveAds = async (retryCount = 5, delayMs = 1000) => {
       setLoading(true);
       setError(null);
@@ -62,8 +70,33 @@ function Home() {
     return words.slice(0, 50).join(' ') + '....';
   };
 
+  const closePopup = () => {
+    setShowPopup(false);
+  };
+
   return (
     <div className="flex flex-col min-h-screen relative">
+      {/* Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Sell Your Old Items!
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Get a <span className="font-semibold text-blue-400">guaranteed OAC Cash Card</span> worth up to{' '}
+              <span className="text-xl font-bold text-blue-400">₹500*</span>!
+            </p>
+            <button
+              onClick={closePopup}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              Got It!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="flex-1">
         {/* Dropdown Buttons */}

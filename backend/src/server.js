@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const adRoutes = require('./routes/ads');
 const chatRoutes = require('./routes/chat');
+const rewardRoutes = require('./routes/rewards'); // Add this line
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/ads', adRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/rewards', rewardRoutes); // Add this line
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -8,6 +8,7 @@ function MyAds() {
   const [editAd, setEditAd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(null); // Track which ad is being deleted
 
   useEffect(() => {
     const fetchMyAds = async (retryCount = 3, delayMs = 1000) => {
@@ -46,7 +47,7 @@ function MyAds() {
     setEditAd({
       ...ad,
       showPhone: ad.show_phone,
-      userPhone: Array.isArray(ad.user_phone) ? ad.user_phone[0] : ad.user_phone, // Normalize initial value
+      userPhone: Array.isArray(ad.user_phone) ? ad.user_phone[0] : ad.user_phone,
     });
   };
 
@@ -61,7 +62,7 @@ function MyAds() {
     formData.append('adId', editAd.id);
     formData.append('userEmail', user.primaryEmailAddress?.emailAddress || '');
     formData.append('showPhone', editAd.showPhone.toString());
-    formData.set('userPhone', editAd.userPhone); // Use updated userPhone from state
+    formData.set('userPhone', editAd.userPhone);
 
     const updateAd = async (retryCount = 3, delayMs = 1000) => {
       try {
@@ -95,6 +96,9 @@ function MyAds() {
     const confirmed = window.confirm('Do you want to confirm delete?');
     if (!confirmed) return;
 
+    setIsDeleting(adId); // Set loading state for this ad
+    setError(null);
+
     try {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/ads/delete`, {
         method: 'DELETE',
@@ -106,10 +110,12 @@ function MyAds() {
         }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error);
+      if (!response.ok) throw new Error(result.error || 'Failed to delete ad');
       setAds((prev) => prev.filter((ad) => ad.id !== adId));
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsDeleting(null); // Reset loading state
     }
   };
 
@@ -125,19 +131,8 @@ function MyAds() {
             fill="none"
             viewBox="0 0 24 24"
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8h-8z"
-            ></path>
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h-8z"></path>
           </svg>
         </div>
       ) : (
@@ -171,15 +166,43 @@ function MyAds() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(ad)}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                      disabled={isDeleting === ad.id}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(ad.id)}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400"
+                      disabled={isDeleting === ad.id}
                     >
-                      Delete
+                      {isDeleting === ad.id ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 mr-2 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v8h-8z"
+                            ></path>
+                          </svg>
+                          Deleting...
+                        </>
+                      ) : (
+                        'Delete'
+                      )}
                     </button>
                   </div>
                 </div>

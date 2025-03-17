@@ -120,6 +120,16 @@ function Navbar() {
                 Home
               </Link>
             </li>
+            <li>
+              <Link
+                to="/post-ad"
+                className="flex items-center py-2 px-3 text-white rounded-sm hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0 transition duration-300"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                
+                Sell an Item
+              </Link>
+            </li>
             
             <li>
               <Link
@@ -137,19 +147,20 @@ function Navbar() {
                 className="flex items-center py-2 px-3 text-white rounded-sm hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0 transition duration-300"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <ChatBubbleLeftIcon className="h-5 w-5 mr-2" />
+                
                 Chat Request
               </Link>
             </li>
             
+           
             <li>
               <Link
-                to="/post-ad"
+                to="/rewards"
                 className="flex items-center py-2 px-3 text-white rounded-sm hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0 transition duration-300"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Post an Ad
+                
+                Rewards
               </Link>
             </li>
           </ul>
